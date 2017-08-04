@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="/static/js/Chart.bundle.js"></script>
+<link href="http://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" rel="stylesheet" type="text/css" media="screen">
+<script src="/static/js/jquery-1.12.4.js"></script>
+<script src="/static/js/jquery-ui.js"></script>
+<script>
+    $( function() {
+    $( "#datepicker1" ).datepicker();
+    $( "#datepicker2" ).datepicker();
+    } );
+</script>
+<script>
+    // ready方法：頁面呈現之後就執行
+    $(document).ready(function(){
+
+        // 點擊執行
+        $("#submit").click(function(){
+            //var key = $('select[id="plu"]').val();
+            var key = $('#plu').val();
+            var start = $('#datepicker1').val().split("/");
+            var end = $('#datepicker2').val().split("/");
+            var rstart = start[2]+"-"+start[0]+"-"+start[1];
+            var rend = end[2]+"-"+end[0]+"-"+end[1];
+
+            var pstart = Date.parse(rstart);
+            var pend = Date.parse(rend);
+            var pnext = pstart
+
+            var date_list = []
+            var _dif = []
+            var _dem = []
+            var _osc = []
+            while (pnext <= pend){
+                date_list.push($.datepicker.formatDate('yy-mm-dd', new Date(pnext)));
+                pnext += 86400000
+            }
+            
+           
+            $.get("{% url 'get_data' %}", {'key':key+"_dif"}, function(result){
+                date_list.forEach(function(each){
+                    _dif.push(parseFloat(result[each]))
+                })
+                $.get("{% url 'get_data' %}", {'key':key+"_dem"}, function(result){
+                    date_list.forEach(function(each){
+                        _dem.push(parseFloat(result[each]))
+                    })
+                    $.get("{% url 'get_data' %}", {'key':key+"_osc"}, function(result){
+                        date_list.forEach(function(each){
+                            _osc.push(parseFloat(result[each]))
+                        })
+                        var ctx = document.getElementById('myChart');
+                        var myChart = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                            labels : date_list,
+                            datasets :[
+                                {
+                                    data : _dif,
+                                    label: 'dif',
+                                    borderColor: "#3e95cd",
+                                    backgroundColor: "#3e95cd",
+                                    fill: false
+                                },
+                                {
+                                    data : _dem,
+                                    label: 'dem',
+                                    borderColor: "#FF5733",
+                                    backgroundColor: "#FF5733",
+                                    fill: false
+                                },
+                                {
+                                    data : _osc,
+                                    label: 'osc',
+                                    borderColor: "rgba(179,181,198,0.5)",
+                                    fill: true
+                                },                                                                                    
+                            ]
+                            },
+                            options: {
+                                title: {
+                                display: true,
+                                text: 'MACD'
+                                }
+                            }                            
+                        });                         
+                    }); 
+                })                                                   
+            })
+
+          
+                                 
+        })
+    });
+</script>
+</head>
+<body>
+    <div style="width:25%;float:left;">
+        <form>
+            Product:<br>
+            <input type="text" id="plu" value="聖誕樹">
+            <br>
+            Start Date:<br>
+            <input type="text" id="datepicker1" value="11/01/2016">
+            <br>
+            End Date:<br>
+            <input type="text" id="datepicker2" value="01/31/2017"><br>
+            <br>
+            <button type="button" id="submit">submit</button>
+        </form>
+    </div>
+    <div class="box" style="width:70%;float:left;">
+        <canvas id="myChart" width="20" height="10"></canvas>
+    </div>
+</body>
+</html>
